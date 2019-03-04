@@ -13,6 +13,7 @@ public class DriveTrain {
   private WPI_TalonSRX BackRight;
   SpeedControllerGroup leftSide;
   SpeedControllerGroup rightSide;
+  DifferentialDrive drive;
   public DriveTrain() {
     FrontLeft = new WPI_TalonSRX(1);
     MiddleLeft = new WPI_TalonSRX(2);
@@ -22,6 +23,7 @@ public class DriveTrain {
     BackRight = new WPI_TalonSRX(6);
     leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
     rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
+    drive = new DifferentialDrive(leftSide, rightSide);
 }
   public DriveTrain(int FL, int ML, int BL, int FR, int MR, int BR) {
     FrontLeft = new WPI_TalonSRX(FL);
@@ -32,6 +34,7 @@ public class DriveTrain {
     BackRight = new WPI_TalonSRX(BR);
     leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
     rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
+    drive = new DifferentialDrive(leftSide, rightSide);
 }
   public DriveTrain(WPI_TalonSRX FL, WPI_TalonSRX ML, WPI_TalonSRX BL, WPI_TalonSRX FR, WPI_TalonSRX MR, WPI_TalonSRX BR) {
     FrontLeft = FL;
@@ -42,6 +45,7 @@ public class DriveTrain {
     BackRight = BR;
     leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
     rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
+    drive = new DifferentialDrive(leftSide, rightSide);
 }
   public DriveTrain(SpeedControllerGroup L, SpeedControllerGroup R) {
     FrontLeft = new WPI_TalonSRX(1);
@@ -52,8 +56,9 @@ public class DriveTrain {
     BackRight = new WPI_TalonSRX(6);
     leftSide = L;
     rightSide = R;
+    drive = new DifferentialDrive(leftSide, rightSide);
 }
-  public void arcadeDrive() {
-    
+  public void arcadeDrive(double forward, double turn) {
+  drive.arcadeDrive(forward, turn);
   }
 }
