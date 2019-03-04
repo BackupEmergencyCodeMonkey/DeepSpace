@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
  */
 public class Robot extends TimedRobot {
   DriveTrain chassisDrive = new DriveTrain();
+  PID testPID = new PID();
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
