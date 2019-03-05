@@ -77,4 +77,16 @@ public class PID {
     motor.config_kD(slot, D);
     motor.config_kF(slot, F);
   }
+  public void useP() {
+    motor.config_kP(slot, P);
+  }
+  public void useI() {
+    motor.config_kI(slot, I);
+  }
+  public void useD() {
+    motor.config_kD(slot, D);
+  }
+  public void useF() {
+    motor.config_kD(slot, F);
+  }
 }
