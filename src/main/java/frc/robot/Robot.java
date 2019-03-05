@@ -7,6 +7,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 
 /**
@@ -17,6 +18,28 @@ import edu.wpi.first.wpilibj.TimedRobot;
  * project.
  */
 public class Robot extends TimedRobot {
+  //*** CONSTANTS!! *** (MEASUREMENTS IN METRIC) INTAKE IS VICTORS, REST ARE TALONS
+  //*** WHEELS ***
+  public static final double wheelDiameter = 15.240; // cm
+  public static final double wheelCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
+  public static final double drivetrainGearRatio = 10.49; // 10.48:1
+  //*** ELEVATOR ***
+  public static final double hubDiameter = 5.080; // cm
+  public static final double hubCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
+  public static final double elevatorGearRatio = 70; //70:1
+  //public static final double elevatorGearRatio = 100; //100:1 COMPBOT RATIO
+  //*** CLIMBER ***
+  public static final double climberGearRatio = 90; // 90:1
+  public static final double MOACActivateAngle = 40.000; //40 DEGREES
+  //*** ARM ***
+  public static final double ElbowGearRatio = 100; //100:1
+  public static final double wristGearRatio = 100; //100:1
+  public static final double intakeGearRatio = 10; //10:1
+  
+  
+  Joystick leftStick = new Joystick(0);
+  Joystick rightStick = new Joystick(1);
+  Joystick copilotStick = new Joystick(2);
   DriveTrain chassisDrive = new DriveTrain();
   PID testPID = new PID();
   /**
@@ -37,6 +60,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    chassisDrive.arcadeDrive(leftStick.getRawAxis(1), rightStick.getRawAxis(0));
   }
 
   @Override
