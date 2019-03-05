@@ -35,6 +35,14 @@ public class Robot extends TimedRobot {
   public static final double ElbowGearRatio = 100; //100:1
   public static final double wristGearRatio = 100; //100:1
   public static final double intakeGearRatio = 10; //10:1
+  //*** FIELD HEIGHT *** IN CM (TO CENTERS)
+  public static final double lowRocketCargo = 28;
+  public static final double midRocketCargo = 55;
+  public static final double highRocketCargo = 83;
+  public static final double lowHatch = 20;
+  public static final double midHatch = 48;
+  public static final double highHatch = 77;
+  public static final double cargoBay = 43;
   
   
   Joystick leftStick = new Joystick(0);
