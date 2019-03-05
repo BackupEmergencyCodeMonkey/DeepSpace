@@ -9,6 +9,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -44,12 +45,17 @@ public class Robot extends TimedRobot {
   public static final double highHatch = 77;
   public static final double cargoBay = 43;
   
-  
   Joystick leftStick = new Joystick(0);
   Joystick rightStick = new Joystick(1);
   Joystick copilotStick = new Joystick(2);
   DriveTrain chassisDrive = new DriveTrain();
-  PID testPID = new PID();
+  WPI_TalonSRX motor;
+  WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
+  public double P = 1.0;
+  public double I = 0.0;
+  public double D = 0.0;
+  public double F = 0.0;
+  public int slot = 0;
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -77,10 +83,15 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testInit() {
+    motor = elevatorTalon;
   }
 
   @Override
-  public void testPeriodic() {
+  public void testPeriodic() {    
+    motor.config_kP(slot, P);
+    motor.config_kI(slot, I);
+    motor.config_kD(slot, D);
+    motor.config_kF(slot, F);
   }
 
 }
