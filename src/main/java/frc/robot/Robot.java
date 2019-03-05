@@ -51,6 +51,7 @@ public class Robot extends TimedRobot {
   DriveTrain chassisDrive = new DriveTrain();
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
+  Vision vis = new Vision(115280);
   public double P = 1.0;
   public double I = 0.0;
   public double D = 0.0;
@@ -62,6 +63,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    vis.getArduino();
   }
 
   @Override
@@ -79,6 +81,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    
   }
 
   @Override

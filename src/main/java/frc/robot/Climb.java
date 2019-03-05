@@ -16,7 +16,7 @@ public class Climb {
     DoubleSolenoid MOAC; // mother of all cylinders
     AHRS gyro = new AHRS(SerialPort.Port.kMXP);
     WPI_TalonSRX talon;
-    int target = 5;
+    int target = 5; // value to set the climb talons to
 
 /**@param port the port number of the main climber talon (12)
  * @param victorPort the port number of the victor that should follow this (calling this 13 for now)
@@ -33,9 +33,10 @@ public class Climb {
    // 12 is the port number of the climber
 
 /**sets the climber arms to rotate out to a certain angle. Senses  then turns the MOAC on */
-   public void climb(double angle) {
+   public void climb(float angle) {
         talon.set(target); 
     //if () // put a NavX angle of the robot test here
+        if (gyro.getPitch() > angle)  // tune this. Pitch is the most likely axis 
        MOAC.set(DoubleSolenoid.Value.kForward);
    }
 
