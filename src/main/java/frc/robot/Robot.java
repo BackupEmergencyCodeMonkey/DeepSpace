@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -73,32 +71,14 @@ public class Robot extends TimedRobot {
   public double D = 0.0;
   public double F = 0.0;
   public int slot = 0;
-<<<<<<< HEAD
   double forward = leftStick.getRawAxis(1);
   double turn = rightStick.getRawAxis(0);
-=======
-
-  public MagicInput INPUT = MagicInput.getInstance();
-
-  public Compressor compress;
-
-  DoubleSolenoid Intake = new DoubleSolenoid(0,1);
-  
->>>>>>> c9c7e01747875e3fcc2d9b6638fd355a4466a33d
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
   @Override
   public void robotInit() {
-    try {
-      compress = new Compressor(0); //Re[lace 0 with the port that the compressor is in
-      compress.setClosedLoopControl(true);
-    } catch (Exception e) {
-      System.out.println("Well shoot, compresser startup failed");
-      compress = null;
-    }
-
     vis.getArduino();
   }
 
@@ -117,6 +97,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    
   }
 
   @Override
