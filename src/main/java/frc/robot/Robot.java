@@ -7,6 +7,8 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -56,12 +58,27 @@ public class Robot extends TimedRobot {
   public double D = 0.0;
   public double F = 0.0;
   public int slot = 0;
+
+  public MagicInput INPUT = MagicInput.getInstance();
+
+  public Compressor compress;
+
+  DoubleSolenoid Intake = new DoubleSolenoid(0,1);
+  
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
   @Override
   public void robotInit() {
+    try {
+      compress = new Compressor(0); //Re[lace 0 with the port that the compressor is in
+      compress.setClosedLoopControl(true);
+    } catch (Exception e) {
+      System.out.println("Well shoot, compresser startup failed");
+      compress = null;
+    }
+
   }
 
   @Override
@@ -79,6 +96,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+
   }
 
   @Override
