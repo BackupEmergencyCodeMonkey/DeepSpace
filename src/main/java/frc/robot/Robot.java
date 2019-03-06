@@ -52,7 +52,6 @@ public class Robot extends TimedRobot {
   Joystick leftStick = new Joystick(0);
   Joystick rightStick = new Joystick(1);
   Joystick copilotStick = new Joystick(2);
-  DriveTrain chassisDrive = new DriveTrain();
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
   //*** DRIVETRAIN ***
@@ -65,7 +64,7 @@ public class Robot extends TimedRobot {
   SpeedControllerGroup leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
   SpeedControllerGroup rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
   DifferentialDrive drive = new DifferentialDrive(leftSide, rightSide);
-  
+
   Vision vis = new Vision(115280);
   public double P = 1.0;
   public double I = 0.0;
