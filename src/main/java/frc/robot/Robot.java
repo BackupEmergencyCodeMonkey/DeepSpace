@@ -10,8 +10,12 @@ package frc.robot;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -50,9 +54,20 @@ public class Robot extends TimedRobot {
   Joystick leftStick = new Joystick(0);
   Joystick rightStick = new Joystick(1);
   Joystick copilotStick = new Joystick(2);
-  DriveTrain chassisDrive = new DriveTrain();
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
+  //*** DRIVETRAIN ***
+  WPI_TalonSRX FrontLeft = new WPI_TalonSRX(1);
+  WPI_VictorSPX MiddleLeft = new WPI_VictorSPX(2);
+  WPI_VictorSPX BackLeft = new WPI_VictorSPX(3);
+  WPI_TalonSRX   FrontRight = new WPI_TalonSRX(4);
+  WPI_VictorSPX MiddleRight = new WPI_VictorSPX(5);
+  WPI_VictorSPX BackRight = new WPI_VictorSPX(6);
+  SpeedControllerGroup leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
+  SpeedControllerGroup rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
+  DifferentialDrive drive = new DifferentialDrive(leftSide, rightSide);
+
+  Vision vis = new Vision(115280);
   public double P = 1.0;
   public double I = 0.0;
   public double D = 0.0;
@@ -79,6 +94,7 @@ public class Robot extends TimedRobot {
       compress = null;
     }
 
+    vis.getArduino();
   }
 
   @Override
@@ -96,7 +112,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-
   }
 
   @Override
