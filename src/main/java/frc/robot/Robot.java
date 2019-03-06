@@ -4,7 +4,7 @@
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
-
+//TALON NUMBERS, PURPOSE, PDP CHANNEL
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
@@ -79,15 +79,14 @@ public class Robot extends TimedRobot {
   DifferentialDrive chassisDrive = new DifferentialDrive(leftSide, rightSide);
 
  //*** VISION ***
-  int bRate;
-  int counting;
+  int bRate = 115200;
+  int counting = 0;
   int xVal; //In order of appearance
   int yVal;
   int wVal;
   int hVal;
   int distVal;
   int confVal;
-  int stopDistance;
   int confidenceThreshold;
   int delayCount;
   int arduinoCounter; // loop counter passed from arduino for timing checks
@@ -124,7 +123,7 @@ public class Robot extends TimedRobot {
   //*** PNEUMATICS ***  
   Compressor compress;  
 
-  DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1);
+  DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1); // NEED A LEFT AND RIGHT
   boolean hatchState = false;
 
   DoubleSolenoid cargoHolder = new DoubleSolenoid (2,3);
@@ -182,7 +181,6 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
      climbTalon.setNeutralMode(NeutralMode.Brake);
      }
-   
   @Override
   public void teleopPeriodic() { 
     chassisDrive.arcadeDrive(forward, turn);
@@ -306,6 +304,8 @@ climbTalon.set(climbSpeed); // tune this value
     motor.config_kI(slot, I);
     motor.config_kD(slot, D);
     motor.config_kF(slot, F);
+    
+   System.out.println( gyro.getPitch());
   }
 
   @Override
