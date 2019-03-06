@@ -179,7 +179,9 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
   }
   @Override
-  public void teleopInit() { }
+  public void teleopInit() {
+     climbTalon.setNeutralMode(NeutralMode.Brake);
+     }
    
   @Override
   public void teleopPeriodic() { 
@@ -235,16 +237,19 @@ public class Robot extends TimedRobot {
     }
     if (copilotStick.getRawButton(9)) { //rotate intake in
     }
+    // ***CLIMB***
     if (leftStick.getRawButton(1)) { //climb
-      if (pdp.getCurrent(12) < 10) {
+    // if the talon stalls, as indicated by drawing too much current, put it in brake mode
+      if (pdp.getCurrent(12) < 10) { //tune this value (10)
 climbTalon.set(climbSpeed); // tune this value
       }
-      else {climbTalon.setNeutralMode()}
-      
-      if (gyro.getPitch() > climbAngle) {}
+      else {climbTalon.set(0);}
+      // if the robot is at or greater than a predetermined angle, fire the MOAC.
+      if (gyro.getPitch() > climbAngle) 
+      {MOAC.set(DoubleSolenoid.Value.kForward);}
     }
     if (leftStick.getRawButton(2)) { //retract piston
-      
+      MOAC.set(DoubleSolenoid.Value.kReverse);
     }        
     if (rightStick.getRawButton(1)) { //Vision tracking (line up the robot to the target)
       String targetPosition = arduino.readString();
