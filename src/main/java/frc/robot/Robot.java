@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
   
 
@@ -106,9 +107,11 @@ public class Robot extends TimedRobot {
   public double D = 0.0;
   public double F = 0.0;
   public int slot = 0;
-//*** JOYSTICKS ***  
+
+  //*** JOYSTICKS ***  
   double forward = leftStick.getRawAxis(1);
   double turn = rightStick.getRawAxis(0);
+  
   //*** CLIMB ***
   DoubleSolenoid MOAC; // mother of all cylinders
   AHRS gyro = new AHRS(SerialPort.Port.kMXP);
@@ -203,25 +206,28 @@ public class Robot extends TimedRobot {
       }
     } 
     if (copilotStick.getRawButton(1)) { //floor level elevator
-      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));                        
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));                        
     }
     if (copilotStick.getRawButton(4)) { //cargo rocket lvl 1
-      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));                              
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(24));                              
     }
     if (copilotStick.getRawButton(1)) { //cargo rocket lvl 2
-      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(55));
     }
     if (copilotStick.getRawButton(1)) { //cargo rockegt lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(83));
     }
+    if (copilotStick.getRawButton(1)) { //cargo cargo ship
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(43));
+    }    
     if (copilotStick.getRawButton(1)) { //hatch rocket lvl 1 / std hatch height
-      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(20));
     }
     if (copilotStick.getRawButton(1)) { //hatch rocket lvl 2 
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));     
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(48));     
     }
     if (copilotStick.getRawButton(1)){//Hatch rocket lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));      
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(77));      
     }
     if (copilotStick.getRawButton(7)) { //outtake
     }
@@ -230,8 +236,11 @@ public class Robot extends TimedRobot {
     if (copilotStick.getRawButton(9)) { //rotate intake in
     }
     if (leftStick.getRawButton(1)) { //climb
-      if ( )
-      climbTalon.set(climbSpeed);
+      if (pdp.getCurrent(12) < 10) {
+climbTalon.set(climbSpeed); // tune this value
+      }
+      else {climbTalon.setNeutralMode()}
+      
       if (gyro.getPitch() > climbAngle) {}
     }
     if (leftStick.getRawButton(2)) { //retract piston
