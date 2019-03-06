@@ -13,15 +13,19 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+  
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
 
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -89,17 +93,20 @@ public class Robot extends TimedRobot {
   int startOfDataStream;
   int endOfDataStream;
   int blocksSeen;
+  int closest = 600; 
   SerialPort arduino;
   final int leftMax = 154;
   final int rightMax = 162;
-  final int min = 0;
-  //*** PID ***
+  final int min = 0;  
+  final double visFastSpeed = .75;
+  final double visSlowSpeed = .5;
+  //*** PID ***  
   public double P = 1.0;
   public double I = 0.0;
   public double D = 0.0;
   public double F = 0.0;
   public int slot = 0;
-//*** JOYSTICKS ***
+//*** JOYSTICKS ***  
   double forward = leftStick.getRawAxis(1);
   double turn = rightStick.getRawAxis(0);
   //*** CLIMB ***
@@ -107,9 +114,11 @@ public class Robot extends TimedRobot {
   AHRS gyro = new AHRS(SerialPort.Port.kMXP);
   WPI_TalonSRX climbTalon = new WPI_TalonSRX(12);
   WPI_VictorSPX climbFollower = new WPI_VictorSPX(13);  
-  int climbTarget = 5; // value to set the climb talons to
-  double climbAngle = 45;  
-  //*** PNEUMATICS ***
+  int climbSpeed = 1; // value to set the climb talons to
+  float climbAngle = 45;  
+  PowerDistributionPanel pdp = new PowerDistributionPanel();
+  
+  //*** PNEUMATICS ***  
   Compressor compress;  
 
   DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1);
@@ -155,11 +164,80 @@ public class Robot extends TimedRobot {
             } // catch (Exception eOnboard)
           }
         }
-        finally {}
     }
     /**
      * Primary parser: Other methods are for legacy reasons and for edge cases
      */
+    } 
+  @Override
+  public void autonomousInit() {
+  }
+  @Override
+  public void autonomousPeriodic() {
+  }
+  @Override
+  public void teleopInit() { }
+   
+  @Override
+  public void teleopPeriodic() { 
+    chassisDrive.arcadeDrive(forward, turn);
+    //Pneumatics Code
+    if (copilotStick.getRawButtonPressed(4)){ //Hatch toggle
+      if (hatchState){
+        hatchState = false;
+        hatchHolder.set(Value.kForward); //Release the thingamabob
+      }
+      if (!hatchState){
+        hatchState=true;
+        hatchHolder.set(Value.kReverse); //Grab the annoying thing
+      }  
+    }
+    if (copilotStick.getRawButtonPressed(5)) {
+      if (cargoState){
+        cargoState = false;
+        cargoHolder.set(Value.kForward);
+      }
+      if (!cargoState) {
+        cargoState = true;
+        cargoHolder.set(Value.kReverse);
+      }
+    } 
+    if (copilotStick.getRawButton(1)) { //floor level elevator
+      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));                        
+    }
+    if (copilotStick.getRawButton(4)) { //cargo rocket lvl 1
+      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));                              
+    }
+    if (copilotStick.getRawButton(1)) { //cargo rocket lvl 2
+      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+    }
+    if (copilotStick.getRawButton(1)) { //cargo rockegt lvl 3
+      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+    }
+    if (copilotStick.getRawButton(1)) { //hatch rocket lvl 1 / std hatch height
+      elevatorTalon.set(ControlMode.MotionMagic, convertEleHeightToNativeUnits(0));
+    }
+    if (copilotStick.getRawButton(1)) { //hatch rocket lvl 2 
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));     
+    }
+    if (copilotStick.getRawButton(1)){//Hatch rocket lvl 3
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));      
+    }
+    if (copilotStick.getRawButton(7)) { //outtake
+    }
+    if (copilotStick.getRawButton(8)) { //rotate intake out
+    }
+    if (copilotStick.getRawButton(9)) { //rotate intake in
+    }
+    if (leftStick.getRawButton(1)) { //climb
+      if ( )
+      climbTalon.set(climbSpeed);
+      if (gyro.getPitch() > climbAngle) {}
+    }
+    if (leftStick.getRawButton(2)) { //retract piston
+      
+    }        
+    if (rightStick.getRawButton(1)) { //Vision tracking (line up the robot to the target)
       String targetPosition = arduino.readString();
       int startOfDataStream = targetPosition.indexOf("B");
       int endOfDataStream = targetPosition.indexOf("\r");// looking for the first carriage return
@@ -185,78 +263,23 @@ public class Robot extends TimedRobot {
       } else {
         System.out.println("Bad String from Arduino: no carriage return character or too short");
       }
-    } 
-
-  @Override
-  public void autonomousInit() {
-  }
-
-  @Override
-  public void autonomousPeriodic() {
-  }
-
-  @Override
-  public void teleopInit() {
-    chassisDrive.arcadeDrive(forward, turn);
-
-    //Pneumatics Code
-    if (copilotStick.getRawButtonPressed(4)){ //Hatch toggle
-      if (hatchState){
-        hatchState = false;
-        hatchHolder.set(Value.kForward); //Release the thingamabob
+      if (distVal > closest) {
+      if (xVal > leftMax && xVal < rightMax) {
+        leftSide.set(visFastSpeed);
+        rightSide.set(visFastSpeed);        
+      } else if (xVal < leftMax) {
+        leftSide.set(visSlowSpeed);
+        rightSide.set(visFastSpeed);
       }
-      if (!hatchState){
-        hatchState=true;
-        hatchHolder.set(Value.kReverse); //Grab the annoying thing
-      }  
-    }
-
-    if (copilotStick.getRawButtonPressed(5)) {
-      if (cargoState){
-        cargoState = false;
-        cargoHolder.set(Value.kForward);
+      else if (xVal > rightMax) {
+        leftSide.set(visFastSpeed);
+        rightSide.set(visSlowSpeed);
       }
-      if (!cargoState) {
-        cargoState = true;
-        cargoHolder.set(Value.kReverse);
-      }
-
-    } 
-    if (copilotStick.getRawButton(1)) { //floor level elevator
     }
-   if (copilotStick.getRawButton(4)) { //cargo 3rd level rocke
-    }
-    if (copilotStick.getRawButton(1)) { //first level rocket
-    }
-    if (copilotStick.getRawButton(1)) { //second level rocket
-
-
-    }
-    if (copilotStick.getRawButton(7)) { //outtake
-
-
-    }
-    if (copilotStick.getRawButton(8)) { //rotate intake out
-
-
-    }
-    if (copilotStick.getRawButton(9)) { //Open hatch intake
-
-
-    }
-    if (copilotStick.getRawButton(10)) { //Open hatch intake
-
-
-    }
-    if (copilotStick.getRawButton(11)) { //Open hatch intake
-
-
-    }
-                            
   }
-  @Override
-  public void teleopPeriodic() {
-    
+}                      
+  public int convertElevatorHeightToNativeUnits(double height){
+    return (int) (height / (2*(Math.PI)) *4096 / elevatorGearRatio);
   }
   @Override
   public void testInit() {
@@ -271,4 +294,8 @@ public class Robot extends TimedRobot {
     motor.config_kF(slot, F);
   }
 
+  @Override
+  public void disabledInit() {
+    
+  }
 }
