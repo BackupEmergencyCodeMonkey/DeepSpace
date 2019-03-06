@@ -245,10 +245,10 @@ climbTalon.set(climbSpeed); // tune this value
       }
       else {climbTalon.set(0);}
       // if the robot is at or greater than a predetermined angle, fire the MOAC.
-      if (gyro.getPitch() > climbAngle) 
+      if (gyro.getPitch() > climbAngle) // climbAngle is 45 degreesright now, tune
       {MOAC.set(DoubleSolenoid.Value.kForward);}
     }
-    if (leftStick.getRawButton(2)) { //retract piston
+    if (leftStick.getRawButton(2)) { //retract MOAC
       MOAC.set(DoubleSolenoid.Value.kReverse);
     }        
     if (rightStick.getRawButton(1)) { //Vision tracking (line up the robot to the target)
