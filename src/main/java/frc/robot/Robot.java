@@ -21,6 +21,7 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -102,16 +103,20 @@ public class Robot extends TimedRobot {
   double forward = leftStick.getRawAxis(1);
   double turn = rightStick.getRawAxis(0);
   //*** CLIMB ***
-  WPI_VictorSPX climbFollower;
   DoubleSolenoid MOAC; // mother of all cylinders
   AHRS gyro = new AHRS(SerialPort.Port.kMXP);
   WPI_TalonSRX climbTalon = new WPI_TalonSRX(12);
-WPI_VictorSRX climbFollower = new WPI_VictorSPX(13);  
+  WPI_VictorSPX climbFollower = new WPI_VictorSPX(13);  
   int climbTarget = 5; // value to set the climb talons to
   double climbAngle = 45;  
   //*** PNEUMATICS ***
   Compressor compress;  
 
+  DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1);
+  boolean hatchState = false;
+
+  DoubleSolenoid cargoHolder = new DoubleSolenoid (2,3);
+  boolean cargoState = false;
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -121,14 +126,66 @@ WPI_VictorSRX climbFollower = new WPI_VictorSPX(13);
     try {
       compress = new Compressor(0);
       compress.setClosedLoopControl(true);
-
-  } catch (Exception e) {
+    } catch (Exception compressorException) {
       System.out.println("Well shoot, compressor startup failed");
       compress = null;
-  }
-
-            
-  }
+    }
+      //*** ARDUINO SERIAL PORT FINDER ***
+      try {
+        SerialPort arduino = new SerialPort(bRate, SerialPort.Port.kUSB);
+        System.out.println("Connected to kUSB");
+      } catch (Exception e) {
+        System.out.println("Couldn't connect to kUSB, trying kUSB1");
+        try {
+          SerialPort arduino = new SerialPort(bRate, SerialPort.Port.kUSB2);
+          System.out.println("Connected to kUSB2");
+        } catch (Exception e2) {
+          System.out.println("Not connected to any of the USB ports, trying MXP spot");
+          try {
+            SerialPort arduino = new SerialPort(bRate, SerialPort.Port.kMXP);
+            System.out.println("Connected to MXP port");
+          } catch (Exception eMXP) {
+            System.out.println("Not Connected to MXP port, trying Onboard");
+            try {
+              SerialPort arduino = new SerialPort(bRate, SerialPort.Port.kOnboard);
+              System.out.println("Connected to Onboard");
+            } catch (Exception eOnboard) {
+              System.out.println("Not connected to any ports on the RoboRIO");
+              arduino = null;
+            } // catch (Exception eOnboard)
+          }
+        }
+        finally {}
+    }
+    /**
+     * Primary parser: Other methods are for legacy reasons and for edge cases
+     */
+      String targetPosition = arduino.readString();
+      int startOfDataStream = targetPosition.indexOf("B");
+      int endOfDataStream = targetPosition.indexOf("\r");// looking for the first carriage return
+      // The indexOf method returns -1 if it can't find the char in the string
+      if (startOfDataStream != -1 && endOfDataStream != -1 && (endOfDataStream - startOfDataStream) > 12) {
+        targetPosition = (targetPosition.substring(startOfDataStream, endOfDataStream));
+        System.out.println(targetPosition);
+        if (targetPosition.startsWith("Block")) {
+          String[] positionNums = targetPosition.split(":");
+          // positionNums[0] would be "Block
+          // positionNums [1] would be number of block: always 0
+          xVal = Integer.parseInt(positionNums[2]);
+          yVal = Integer.parseInt(positionNums[3]);
+          wVal = Integer.parseInt(positionNums[4]);
+          hVal = Integer.parseInt(positionNums[5]);
+          distVal = Integer.parseInt(positionNums[6]);
+          confVal = Integer.parseInt(positionNums[7]);
+          blocksSeen = Integer.parseInt(positionNums[1]);
+          arduinoCounter = Integer.parseInt(positionNums[8]);
+        } else {
+          System.out.println("Bad String from Arduino: Doesn't start with Block");
+        }
+      } else {
+        System.out.println("Bad String from Arduino: no carriage return character or too short");
+      }
+    } 
 
   @Override
   public void autonomousInit() {
@@ -143,14 +200,64 @@ WPI_VictorSRX climbFollower = new WPI_VictorSPX(13);
     chassisDrive.arcadeDrive(forward, turn);
 
     //Pneumatics Code
-    if (copilotStick.getRawButton(1))
-  }
+    if (copilotStick.getRawButtonPressed(4)){ //Hatch toggle
+      if (hatchState){
+        hatchState = false;
+        hatchHolder.set(Value.kForward); //Release the thingamabob
+      }
+      if (!hatchState){
+        hatchState=true;
+        hatchHolder.set(Value.kReverse); //Grab the annoying thing
+      }  
+    }
 
+    if (copilotStick.getRawButtonPressed(5)) {
+      if (cargoState){
+        cargoState = false;
+        cargoHolder.set(Value.kForward);
+      }
+      if (!cargoState) {
+        cargoState = true;
+        cargoHolder.set(Value.kReverse);
+      }
+
+    } 
+    if (copilotStick.getRawButton(1)) { //floor level elevator
+    }
+   if (copilotStick.getRawButton(4)) { //cargo 3rd level rocke
+    }
+    if (copilotStick.getRawButton(1)) { //first level rocket
+    }
+    if (copilotStick.getRawButton(1)) { //second level rocket
+
+
+    }
+    if (copilotStick.getRawButton(7)) { //outtake
+
+
+    }
+    if (copilotStick.getRawButton(8)) { //rotate intake out
+
+
+    }
+    if (copilotStick.getRawButton(9)) { //Open hatch intake
+
+
+    }
+    if (copilotStick.getRawButton(10)) { //Open hatch intake
+
+
+    }
+    if (copilotStick.getRawButton(11)) { //Open hatch intake
+
+
+    }
+                            
+  }
   @Override
   public void teleopPeriodic() {
     
   }
-
   @Override
   public void testInit() {
     motor = elevatorTalon;
