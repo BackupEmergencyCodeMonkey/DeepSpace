@@ -63,7 +63,7 @@ public class Robot extends TimedRobot {
   WPI_VictorSPX BackRight = new WPI_VictorSPX(6);
   SpeedControllerGroup leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
   SpeedControllerGroup rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
-  DifferentialDrive drive = new DifferentialDrive(leftSide, rightSide);
+  DifferentialDrive chassisDrive = new DifferentialDrive(leftSide, rightSide);
 
   Vision vis = new Vision(115280);
   public double P = 1.0;
@@ -71,6 +71,8 @@ public class Robot extends TimedRobot {
   public double D = 0.0;
   public double F = 0.0;
   public int slot = 0;
+  double forward = leftStick.getRawAxis(1);
+  double turn = rightStick.getRawAxis(0);
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -90,7 +92,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-    chassisDrive.arcadeDrive(leftStick.getRawAxis(1), rightStick.getRawAxis(0));
+    chassisDrive.arcadeDrive(forward, turn);
   }
 
   @Override
