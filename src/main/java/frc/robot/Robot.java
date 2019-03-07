@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
@@ -23,7 +24,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
-
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 
@@ -44,7 +45,6 @@ public class Robot extends TimedRobot {
   //*** ELEVATOR ***
   public static final double hubDiameter = 5.080; // cm
   public static final double hubCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
-  public static final double elevatorGearRatio = 70; //70:1
   //public static final double elevatorGearRatio = 100; //100:1 COMPBOT RATIO
   //*** CLIMBER ***
   public static final double climberGearRatio = 90; // 90:1
@@ -101,10 +101,22 @@ public class Robot extends TimedRobot {
   final double visFastSpeed = .75;
   final double visSlowSpeed = .5;
   //*** PID ***  
-  public double P = 1.0;
-  public double I = 0.0;
-  public double D = 0.0;
-  public double F = 0.0;
+  public double DriveP = 0.0;
+  public double ElevatorP = 0.0;
+  public double ElbowP = 0.0;
+  public double testP = 0.0;
+  public double DriveI = 0.0;
+  public double ElevatorI = 0.0;
+  public double ElbowI = 0.0;
+  public double testI = 0.0;
+  public double DriveD = 0.0;
+  public double ElevatorD = 0.0;
+  public double ElbowD = 0.0;
+  public double testD = 0.0;
+  public double DriveF = 0.0;
+  public double ElevatorF = 0.0;
+  public double ElbowF = 0.0;
+  public double testF = 0.0;
   public int slot = 0;
 
   //*** JOYSTICKS ***  
@@ -132,6 +144,7 @@ public class Robot extends TimedRobot {
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
+  Potentiometer pot = new AnalogPotentiometer(0, 1, 0);
   @Override
   public void robotInit() {
     try {
@@ -206,28 +219,28 @@ public class Robot extends TimedRobot {
       }
     } 
     if (copilotStick.getRawButton(1)) { //floor level elevator
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));                        
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(0));                        
     }
     if (copilotStick.getRawButton(4)) { //cargo rocket lvl 1
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(24));                              
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(24));                              
     }
     if (copilotStick.getRawButton(1)) { //cargo rocket lvl 2
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(55));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(55));
     }
     if (copilotStick.getRawButton(1)) { //cargo rockegt lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(83));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(83));
     }
     if (copilotStick.getRawButton(1)) { //cargo cargo ship
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(43));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(43));
     }    
     if (copilotStick.getRawButton(1)) { //hatch rocket lvl 1 / std hatch height
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(20));
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(20));
     }
     if (copilotStick.getRawButton(1)) { //hatch rocket lvl 2 
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(48));     
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(48));     
     }
     if (copilotStick.getRawButton(1)){//Hatch rocket lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(77));      
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(77));      
     }
     if (copilotStick.getRawButton(7)) { //outtake
     }
@@ -290,8 +303,8 @@ climbTalon.set(climbSpeed); // tune this value
     }
   }
 }                      
-  public int convertElevatorHeightToNativeUnits(double height){
-    return (int) (height / (2*(Math.PI)) *4096 / elevatorGearRatio);
+  public int convertElevatorValueToNativeUnits(double encValue){
+    return (int) (encValue / (hubDiameter*(Math.PI)) *4096);
   }
   @Override
   public void testInit() {
@@ -300,11 +313,16 @@ climbTalon.set(climbSpeed); // tune this value
 
   @Override
   public void testPeriodic() {    
-    motor.config_kP(slot, P);
-    motor.config_kI(slot, I);
-    motor.config_kD(slot, D);
-    motor.config_kF(slot, F);
-    
+    /*motor.config_kP(slot, testP);
+    motor.config_kI(slot, testI);
+    motor.config_kD(slot, testD);
+    motor.config_kF(slot, testF);
+    */
+    if (leftStick.getRawButton(1) == true) {
+      motor.set(pot.get());
+    } else {
+      motor.set(0);
+    }
    System.out.println( gyro.getPitch());
   }
 
