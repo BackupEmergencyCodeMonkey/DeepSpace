@@ -70,6 +70,10 @@ public class Robot extends TimedRobot {
   public static final double midHatch = 48;
   public static final double highHatch = 77;
   public static final double cargoBay = 43;
+  public static final double elevatorLowMidCargoRocketHeight = 42; // halfway between the low and middle cargo heights
+  public static final double elevatorHighMidCargoRocketHeight = 69; // halfway between the middle and high cargo heights
+  public static final double elevatorLowMidHatchRocketHeight = 34; // halfway between the low and middle cargo heights
+  public static final double elevatorHighMidHatchRocketHeight = 61; // halfway between the middle and high cargo heights
   
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
@@ -140,7 +144,7 @@ public class Robot extends TimedRobot {
   // *** Buttons ***
   boolean hatchToggle;    
   boolean cargoToggle ;
-  boolean elevatorFloorButton;
+  boolean groundLev;
   boolean cargoLev1;
   boolean cargoLev2;
   boolean cargoLev3;
@@ -150,7 +154,7 @@ public class Robot extends TimedRobot {
   boolean cargoShipLev;
   boolean outtakeButton;
   boolean rotateIntakeOutButton;
-  boolean rotateIntakeInButton;
+  boolean intakeButton;
   boolean climbButton;
   boolean retractClimbCylinderButton;
   boolean visionTrackingButton;
@@ -246,8 +250,8 @@ public class Robot extends TimedRobot {
      }
   @Override
   public void teleopPeriodic() { 
-    forward = leftStick.getRawAxis() ;//HELP MEE
-    turn = rightStick.getRawAxis();
+    forward = leftStick.getRawAxis(1) ;//HELP MEE
+    turn = rightStick.getRawAxis(0);
     chassisDrive.arcadeDrive(forward, turn);    
 
     openHatch = leftStick.getRawButtonPressed(4);
@@ -258,7 +262,7 @@ public class Robot extends TimedRobot {
     toggleIntake = rightStick.getRawButton(2); //Toggle intake open / closed
     intakeButton = rightStick.getRawButton(1); //Intake cargo
     outtakeButton = rightStick.getRawButton(3); //fire cargo
-    endgameButton = rightStick.getRawButton(7);
+    climbButton = rightStick.getRawButton(7);                                     //should this be "climbButton" or "endgameButton"
                             
     cargoLev1 = copilotStick.getRawButton(11);
     cargoLev2 = copilotStick.getRawButton(9);
@@ -286,12 +290,12 @@ public class Robot extends TimedRobot {
       System.out.println("Setting camera 1");
       server.setSource(camera1);
     }
-    lastCameraSwitchState = camSwapButton();        
+    lastCameraSwitchState = camSwapButton;        
                          
     
 
     //Elevator Code
-    if (elevatorFloorButton) { //floor level elevator
+    if (groundLev) { //floor level elevator
       elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));                        
     }
     
@@ -330,9 +334,9 @@ public class Robot extends TimedRobot {
     }        
     if (outtakeButton) { //outtake
     }
-    if (rotateIntakeOutButton) { //rotate intake out
+    if (outtakeButton) { //rotate intake out
     }
-    if (rotateIntakeInButton) { //rotate intake in
+    if (intakeButton) { //rotate intake in
     }
     // ***CLIMB***
     if (climbButton) { //climb
