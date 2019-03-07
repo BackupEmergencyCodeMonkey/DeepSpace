@@ -24,9 +24,14 @@ import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.PowerDistributionPanel;
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.VideoSink;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.cscore.VideoSource.ConnectionStrategy;
 
 
 /**
@@ -46,6 +51,10 @@ public class Robot extends TimedRobot {
   public static final double hubDiameter = 5.080; // cm
   public static final double hubCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
   //public static final double elevatorGearRatio = 100; //100:1 COMPBOT RATIO
+  //*** ELEVATOR AND ARM LENGTHS ***
+  public static final double baseArmHeight = (30.0*2.54); //in inches, *2.54 for to CM
+  public static final double elbowLength = (16.5*2.54);
+  public static final double wristLength = (14.0*2.54);
   //*** CLIMBER ***
   public static final double climberGearRatio = 90; // 90:1
   public static final double MOACActivateAngle = 40.000; //40 DEGREES
@@ -62,18 +71,20 @@ public class Robot extends TimedRobot {
   public static final double highHatch = 77;
   public static final double cargoBay = 43;
   
-  Joystick leftStick = new Joystick(0);
-  Joystick rightStick = new Joystick(1);
-  Joystick copilotStick = new Joystick(2);
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
+  WPI_TalonSRX elbowTalon = new WPI_TalonSRX(12);
+  WPI_TalonSRX wristTalon = new WPI_TalonSRX(11);
+
   //*** DRIVETRAIN ***
   WPI_TalonSRX FrontLeft = new WPI_TalonSRX(1);
   WPI_VictorSPX MiddleLeft = new WPI_VictorSPX(2);
   WPI_VictorSPX BackLeft = new WPI_VictorSPX(3);
+
   WPI_TalonSRX   FrontRight = new WPI_TalonSRX(4);
   WPI_VictorSPX MiddleRight = new WPI_VictorSPX(5);
   WPI_VictorSPX BackRight = new WPI_VictorSPX(6);
+  
   SpeedControllerGroup leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
   SpeedControllerGroup rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
   DifferentialDrive chassisDrive = new DifferentialDrive(leftSide, rightSide);
@@ -100,6 +111,7 @@ public class Robot extends TimedRobot {
   final int min = 0;  
   final double visFastSpeed = .75;
   final double visSlowSpeed = .5;
+
   //*** PID ***  
   public double DriveP = 0.0;
   public double ElevatorP = 0.0;
@@ -120,8 +132,34 @@ public class Robot extends TimedRobot {
   public int slot = 0;
 
   //*** JOYSTICKS ***  
-  double forward = leftStick.getRawAxis(1);
-  double turn = rightStick.getRawAxis(0);
+  Joystick leftStick = new Joystick(0);
+  Joystick rightStick = new Joystick(1);
+  Joystick copilotStick = new Joystick(2);
+  double forward;
+  double turn;
+  // *** Buttons ***
+  boolean hatchToggle;    
+  boolean cargoToggle ;
+  boolean elevatorFloorButton;
+  boolean cargoLev1;
+  boolean cargoLev2;
+  boolean cargoLev3;
+  boolean hatchLev1;
+  boolean hatchLev2;
+  boolean hatchLev3;  
+  boolean cargoShipLev;
+  boolean outtakeButton;
+  boolean rotateIntakeOutButton;
+  boolean rotateIntakeInButton;
+  boolean climbButton;
+  boolean retractClimbCylinderButton;
+  boolean visionTrackingButton;
+  boolean openHatch;
+  boolean closeHatch;
+  boolean camSwapButton;
+  boolean retractIntake;
+  boolean toggleIntake;
+        
   
   //*** CLIMB ***
   DoubleSolenoid MOAC; // mother of all cylinders
@@ -140,6 +178,11 @@ public class Robot extends TimedRobot {
 
   DoubleSolenoid cargoHolder = new DoubleSolenoid (2,3);
   boolean cargoState = false;
+
+  boolean lastCameraSwitchState = false;
+  UsbCamera camera1;
+  UsbCamera camera2;
+  VideoSink server;
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -179,10 +222,17 @@ public class Robot extends TimedRobot {
             } // catch (Exception eOnboard)
           }
         }
-    }
-    /**
-     * Primary parser: Other methods are for legacy reasons and for edge cases
-     */
+      }
+      camera1 = CameraServer.getInstance().startAutomaticCapture(0);
+      camera2 = CameraServer.getInstance().startAutomaticCapture(1);
+      server = CameraServer.getInstance().addSwitchedCamera("switched camera");
+      camera1.setConnectionStrategy(ConnectionStrategy.kAutoManage); //Change connection stratagy if desired
+      camera2.setConnectionStrategy(ConnectionStrategy.kAutoManage);
+
+      //set initial states for the cylinders
+      MOAC.set(DoubleSolenoid.Value.kReverse);
+      hatchHolder.set(DoubleSolenoid.Value.kReverse);
+      cargoHolder.set(DoubleSolenoid.Value.kReverse);      
     } 
   @Override
   public void autonomousInit() {
@@ -196,73 +246,111 @@ public class Robot extends TimedRobot {
      }
   @Override
   public void teleopPeriodic() { 
-    chassisDrive.arcadeDrive(forward, turn);
-    //Pneumatics Code
-    if (copilotStick.getRawButtonPressed(4)){ //Hatch toggle
-      if (hatchState){
-        hatchState = false;
-        hatchHolder.set(Value.kForward); //Release the thingamabob
+    forward = leftStick.getRawAxis() ;//HELP MEE
+    turn = rightStick.getRawAxis();
+    chassisDrive.arcadeDrive(forward, turn);    
+
+    openHatch = leftStick.getRawButtonPressed(4);
+    closeHatch = leftStick.getRawButtonPressed(3);
+    camSwapButton = leftStick.getRawButton(6);      
+    retractIntake = leftStick.getRawButton(5);
+
+    toggleIntake = rightStick.getRawButton(2); //Toggle intake open / closed
+    intakeButton = rightStick.getRawButton(1); //Intake cargo
+    outtakeButton = rightStick.getRawButton(3); //fire cargo
+    endgameButton = rightStick.getRawButton(7);
+                            
+    cargoLev1 = copilotStick.getRawButton(11);
+    cargoLev2 = copilotStick.getRawButton(9);
+    cargoLev3 = copilotStick.getRawButton(7);
+    hatchLev1 = copilotStick.getRawButton(12);
+    hatchLev2 = copilotStick.getRawButton(10);
+    hatchLev3 = copilotStick.getRawButton(8);
+    cargoShipLev = copilotStick.getRawButton(5);
+    groundLev = copilotStick.getRawButton(3);
+
+    //Undefined buttons below 
+    /** 
+    rotateIntakeOutButton = copilotStick.getRawButton(8);
+    rotateIntakeInButton = copilotStick.getRawButton(9);
+    climbButton = leftStick.getRawButton(1);
+    retractClimbCylinderButton = leftStick.getRawButton(2);
+    visionTrackingButton = rightStick.getRawButton(1);            
+*/
+
+    // camera switching code
+    if (camSwapButton && !lastCameraSwitchState) {
+      System.out.println("Setting camera 2");
+      server.setSource(camera2);
+    } else if (!camSwapButton && lastCameraSwitchState) {
+      System.out.println("Setting camera 1");
+      server.setSource(camera1);
+    }
+    lastCameraSwitchState = camSwapButton();        
+                         
+    
+
+    //Elevator Code
+    if (elevatorFloorButton) { //floor level elevator
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));                        
+    }
+    
+    //if (cargoState){
+      if (cargoLev1) { //cargo rocket lvl 1
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(24));
+        setIntakeAngles(0);                              
       }
-      if (!hatchState){
-        hatchState=true;
-        hatchHolder.set(Value.kReverse); //Grab the annoying thing
-      }  
-    }
-    if (copilotStick.getRawButtonPressed(5)) {
-      if (cargoState){
-        cargoState = false;
-        cargoHolder.set(Value.kForward);
+      if (cargoLev2) { //cargo rocket lvl 2
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(55));
+        setIntakeAngles(0);
       }
-      if (!cargoState) {
-        cargoState = true;
-        cargoHolder.set(Value.kReverse);
+      if (cargoLev3) { //cargo rockegt lvl 3
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(83));
+        setIntakeAngles(0);
       }
-    } 
-    if (copilotStick.getRawButton(1)) { //floor level elevator
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(0));                        
+    //}
+        
+    //if(hatchState){
+      if (hatchLev1) { //hatch rocket lvl 1 / std hatch height
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(20));
+        setIntakeAngles(0);
+      }
+      if (hatchLev2) { //hatch rocket lvl 2 
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(48)); 
+        setIntakeAngles(0);            
+      }
+      if (hatchLev3) {//Hatch rocket lvl 3
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(77));  
+        setIntakeAngles(0);            
+      }
+    //}
+
+    if (cargoShipLev) { //cargo cargo ship
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(43));
+    }        
+    if (outtakeButton) { //outtake
     }
-    if (copilotStick.getRawButton(4)) { //cargo rocket lvl 1
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(24));                              
+    if (rotateIntakeOutButton) { //rotate intake out
     }
-    if (copilotStick.getRawButton(1)) { //cargo rocket lvl 2
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(55));
-    }
-    if (copilotStick.getRawButton(1)) { //cargo rockegt lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(83));
-    }
-    if (copilotStick.getRawButton(1)) { //cargo cargo ship
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(43));
-    }    
-    if (copilotStick.getRawButton(1)) { //hatch rocket lvl 1 / std hatch height
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(20));
-    }
-    if (copilotStick.getRawButton(1)) { //hatch rocket lvl 2 
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(48));     
-    }
-    if (copilotStick.getRawButton(1)){//Hatch rocket lvl 3
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorValueToNativeUnits(77));      
-    }
-    if (copilotStick.getRawButton(7)) { //outtake
-    }
-    if (copilotStick.getRawButton(8)) { //rotate intake out
-    }
-    if (copilotStick.getRawButton(9)) { //rotate intake in
+    if (rotateIntakeInButton) { //rotate intake in
     }
     // ***CLIMB***
-    if (leftStick.getRawButton(1)) { //climb
+    if (climbButton) { //climb
+      elevatorTalon.set(0);
     // if the talon stalls, as indicated by drawing too much current, put it in brake mode
       if (pdp.getCurrent(12) < 10) { //tune this value (10)
-climbTalon.set(climbSpeed); // tune this value
+        climbTalon.set(climbSpeed); // tune this value
       }
       else {climbTalon.set(0);}
       // if the robot is at or greater than a predetermined angle, fire the MOAC.
       if (gyro.getPitch() > climbAngle) // climbAngle is 45 degreesright now, tune
       {MOAC.set(DoubleSolenoid.Value.kForward);}
     }
-    if (leftStick.getRawButton(2)) { //retract MOAC
+    if (retractClimbCylinderButton) { //retract MOAC
       MOAC.set(DoubleSolenoid.Value.kReverse);
     }        
-    if (rightStick.getRawButton(1)) { //Vision tracking (line up the robot to the target)
+        
+    if (visionTrackingButton) { //Vision tracking (line up the robot to the target)
       String targetPosition = arduino.readString();
       int startOfDataStream = targetPosition.indexOf("B");
       int endOfDataStream = targetPosition.indexOf("\r");// looking for the first carriage return
@@ -302,10 +390,22 @@ climbTalon.set(climbSpeed); // tune this value
       }
     }
   }
+  
 }                      
-  public int convertElevatorValueToNativeUnits(double encValue){
+  public int convertElevatorHeightToNativeUnits(double encValue){
     return (int) (encValue / (hubDiameter*(Math.PI)) *4096);
   }
+  public double convertElevatorNativeUnitsToDegrees(int n) {
+    return (((double) n) % 4096) / 4096 * 360; //cast n to double, then get the number of NU's away from an even rotation, 
+    //then get the number of rotations, then conv. to degrees
+  }
+  public void setIntakeAngles(double angle) {
+    //Set elbow angle here
+   double wristAngle = 180-angle;
+    //set wrist angle here
+  }
+
+  
   @Override
   public void testInit() {
     motor = elevatorTalon;
@@ -325,9 +425,11 @@ climbTalon.set(climbSpeed); // tune this value
     }
    System.out.println( gyro.getPitch());
   }
-
   @Override
   public void disabledInit() {
     
   }
+}
+class TogglingButton {
+
 }
