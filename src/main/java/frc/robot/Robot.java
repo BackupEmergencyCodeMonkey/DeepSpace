@@ -45,23 +45,28 @@ public class Robot extends TimedRobot {
   //*** CONSTANTS!! *** (MEASUREMENTS IN METRIC) INTAKE IS VICTORS, REST ARE TALONS
   //*** WHEELS ***
   public static final double wheelDiameter = 15.240; // cm
-  public static final double wheelCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
+  public static final double wheelCirc = (Math.PI)*wheelDiameter; // (pi)d
   public static final double drivetrainGearRatio = 10.49; // 10.48:1
+  
   //*** ELEVATOR ***
-  public static final double hubDiameter = 5.080; // cm
-  public static final double hubCirc = 2*(Math.PI)*wheelDiameter; // 2(pi)d
+  public static final double hubDiameter = 2.54; // cm
+  public static final double hubCirc = (Math.PI)*hubDiameter; // (pi)d
   //public static final double elevatorGearRatio = 100; //100:1 COMPBOT RATIO
+
   //*** ELEVATOR AND ARM LENGTHS ***
   public static final double baseArmHeight = (30.0*2.54); //in inches, *2.54 for to CM
   public static final double elbowLength = (16.5*2.54);
   public static final double wristLength = (14.0*2.54);
+  
   //*** CLIMBER ***
   public static final double climberGearRatio = 90; // 90:1
   public static final double MOACActivateAngle = 40.000; //40 DEGREES
+  
   //*** ARM ***
   public static final double ElbowGearRatio = 100; //100:1
   public static final double wristGearRatio = 100; //100:1
   public static final double intakeGearRatio = 10; //10:1
+  
   //*** FIELD HEIGHT *** IN CM (TO CENTERS)
   public static final double lowRocketCargo = 28;
   public static final double midRocketCargo = 55;
@@ -77,8 +82,8 @@ public class Robot extends TimedRobot {
   
   WPI_TalonSRX motor;
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
-  WPI_TalonSRX elbowTalon = new WPI_TalonSRX(12);
-  WPI_TalonSRX wristTalon = new WPI_TalonSRX(11);
+  WPI_TalonSRX elbowTalon = new WPI_TalonSRX(10);
+  WPI_TalonSRX wristTalon = new WPI_TalonSRX(7);
 
   //*** DRIVETRAIN ***
   WPI_TalonSRX FrontLeft = new WPI_TalonSRX(1);
@@ -118,21 +123,24 @@ public class Robot extends TimedRobot {
 
   //*** PID ***  
   public double DriveP = 0.0;
-  public double ElevatorP = 0.0;
-  public double ElbowP = 0.0;
-  public double testP = 0.0;
   public double DriveI = 0.0;
-  public double ElevatorI = 0.0;
-  public double ElbowI = 0.0;
-  public double testI = 0.0;
   public double DriveD = 0.0;
-  public double ElevatorD = 0.0;
-  public double ElbowD = 0.0;
-  public double testD = 0.0;
   public double DriveF = 0.0;
-  public double ElevatorF = 0.0;
+
+  public double ElevatorP = 0.0;
+  public double ElevatorI = 0.0;
+  public double ElevatorD = 0.0;
+  
+  public double ElbowP = 0.0;
+  public double ElbowI = 0.0;
+  public double ElbowD = 0.0;
   public double ElbowF = 0.0;
+  
+  public double testP = 0.0;
+  public double testI = 0.0;
+  public double testD = 0.0;
   public double testF = 0.0;
+  
   public int slot = 0;
 
   //*** JOYSTICKS ***  
@@ -143,7 +151,7 @@ public class Robot extends TimedRobot {
   double turn;
   // *** Buttons ***
   boolean hatchToggle;    
-  boolean cargoToggle ;
+  boolean cargoToggle;
   boolean groundLev;
   boolean cargoLev1;
   boolean cargoLev2;
@@ -187,6 +195,9 @@ public class Robot extends TimedRobot {
   UsbCamera camera1;
   UsbCamera camera2;
   VideoSink server;
+
+  int counter; // count the number of iterations in a periodic mode
+  boolean climbButtonHasBeenPressed;
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -194,6 +205,7 @@ public class Robot extends TimedRobot {
   Potentiometer pot = new AnalogPotentiometer(0, 1, 0);
   @Override
   public void robotInit() {
+    zeroLoopCounter();
     try {
       compress = new Compressor(0);
       compress.setClosedLoopControl(true);
@@ -240,13 +252,16 @@ public class Robot extends TimedRobot {
     } 
   @Override
   public void autonomousInit() {
+    zeroLoopCounter();
   }
   @Override
   public void autonomousPeriodic() {
+    incrementLoopCounter();
   }
   @Override
   public void teleopInit() {
      climbTalon.setNeutralMode(NeutralMode.Brake);
+     zeroLoopCounter();
      }
   @Override
   public void teleopPeriodic() { 
@@ -290,42 +305,40 @@ public class Robot extends TimedRobot {
       System.out.println("Setting camera 1");
       server.setSource(camera1);
     }
-    lastCameraSwitchState = camSwapButton;        
-                         
-    
-
+    lastCameraSwitchState = camSwapButton;                         
     //Elevator Code
     if (groundLev) { //floor level elevator
-      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));                        
+      elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(0));
+      setIntakeAngles(0, 0);                                   
     }
     
     //if (cargoState){
       if (cargoLev1) { //cargo rocket lvl 1
-        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(24));
-        setIntakeAngles(0);                              
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(elevatorLowMidCargoRocketHeight));
+        setIntakeAngles(elevatorLowMidCargoRocketHeight, lowRocketCargo);                              
       }
       if (cargoLev2) { //cargo rocket lvl 2
-        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(55));
-        setIntakeAngles(0);
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(elevatorHighMidCargoRocketHeight));
+        setIntakeAngles(elevatorHighMidCargoRocketHeight, midRocketCargo);
       }
       if (cargoLev3) { //cargo rockegt lvl 3
-        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(83));
-        setIntakeAngles(0);
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(elevatorHighMidCargoRocketHeight));
+        setIntakeAngles(elevatorHighMidCargoRocketHeight, highRocketCargo);
       }
     //}
         
     //if(hatchState){
       if (hatchLev1) { //hatch rocket lvl 1 / std hatch height
-        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(20));
-        setIntakeAngles(0);
+        elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(elevatorLowMidHatchRocketHeight));
+        setIntakeAngles(elevatorLowMidHatchRocketHeight, lowHatch);
       }
       if (hatchLev2) { //hatch rocket lvl 2 
         elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(48)); 
-        setIntakeAngles(0);            
+        setIntakeAngles(elevatorLowMidHatchRocketHeight, midHatch);            
       }
       if (hatchLev3) {//Hatch rocket lvl 3
         elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(77));  
-        setIntakeAngles(0);            
+        setIntakeAngles(elevatorHighMidHatchRocketHeight, highHatch);            
       }
     //}
 
@@ -340,6 +353,7 @@ public class Robot extends TimedRobot {
     }
     // ***CLIMB***
     if (climbButton) { //climb
+      climbButtonHasBeenPressed = true;
       elevatorTalon.set(0);
       elbowTalon.set(0);
       wristTalon.set(0);
@@ -397,21 +411,28 @@ public class Robot extends TimedRobot {
     }
   }
   
+  counter++;
 }                      
   public int convertElevatorHeightToNativeUnits(double encValue){
     return (int) (encValue / (hubDiameter*(Math.PI)) *4096);
   }
-  public double convertElevatorNativeUnitsToDegrees(int n) {
-    return (((double) n) % 4096) / 4096 * 360; //cast n to double, then get the number of NU's away from an even rotation, 
-    //then get the number of rotations, then conv. to degrees
-  }
-  public void setIntakeAngles(double elevatorHeight, double goalHeight) {
-    //Set elbow angle here
-   double var = Math.acos(( elevatorHeight - goalHeight )/41.91);
-    //set wrist angle here
-    // elbow angle to the vertical 
+  
+  public double convertNativeUnitsToDegrees(int n) {
+    return (((double) n) % 4096) / 4096 * 360;//cast n to double, then get the number of NU's away from an even rotation, 
+                                              //then get the number of rotations, then conv. to degrees
   }
 
+  public int convertDegreesToNativeUnits(double n) {
+    return (int) (n / 360 * 4096); 
+  }
+
+  public void setIntakeAngles(double elevatorHeight, double goalHeight) {
+    double elbowAngle = Math.acos((goalHeight - elevatorHeight)/elbowLength); //Math magic: cos = opp/adj
+    elbowTalon.set(ControlMode.MotionMagic, convertDegreesToNativeUnits(elbowAngle));
+
+    double wristAngle = -elbowAngle;
+    wristTalon.set(ControlMode.MotionMagic, convertDegreesToNativeUnits(wristAngle));
+  }
   
   @Override
   public void testInit() {
@@ -436,7 +457,62 @@ public class Robot extends TimedRobot {
   public void disabledInit() {
     
   }
+  private void zeroLoopCounter() {counter = 0;}
+  private void incrementLoopCounter() {counter++;}
+  
+  double lastSpeed;
+  //
+public double getAcceleration(WPI_TalonSRX talonToGetAccel) {
+
+  double accel;
+  double speed = (talonToGetAccel.getSelectedSensorVelocity()) * 165.1 * Math.PI  /(409600); // speed = encoder ticks per 100 ms * 1 rev / 4096 encoder ticks * 6.5 pi inches wheel circumference per revolution * 2.54 cm per 1 in * 1000 ms/1s * 1 m/100 cm
+  accel = (speed - lastSpeed)/0.020;
+ //if delta speed is negligible, then set acceleration to be zero
+  if((speed - lastSpeed) < 1E-10)
+  {accel = 0.0;}
+  lastSpeed = speed;
+return accel;  
 }
+
+
+
+  
+/**if the robot tips too far, limit its acceleration so that it can stabilise. Disable this if climbing */
+  public void limitAccelerationWhenTipping() {
+    if ( !climbButtonHasBeenPressed) {}
+    if (Math.abs(gyro.getPitch()) > 20) {
+      leftSide.set(leftSide.get());
+      rightSide.set(rightSide.get());      
+    }
+  }
+    
+  }
 class TogglingButton {
 
+  //inspired by Cheesy Poof's class LatchedBoolean
+  //https://github.com/Team254/FRC-2018-Public/blob/master/src/main/java/com/team254/lib/util/LatchedBoolean.java
+  //boolean currentButtonState;
+  boolean lastButtonState;
+  boolean toggleState = false; 
+  
+  //constructors
+  public TogglingButton (boolean ToggleState) {this.toggleState = ToggleState;}
+  public TogglingButton () {toggleState = false;}
+  
+  /**
+   * Update the toggled state of the button based upon input
+   * @param currentButtonState the input state of the buttong
+   * @return the new state of the button
+   */
+  public boolean update (boolean currentButtonState)  {
+    //first, test whether the button was only just activated by using the test
+    if (currentButtonState && !lastButtonState) {
+      //If this button was only just pressed, then change the state of the toggle 
+      toggleState = !toggleState; 
+    }
+    //last,  update the value of lastButtonState so that the toggle is not activated every 20 
+    //milliseconds during the interval in which the  button is pressed
+    lastButtonState = currentButtonState;
+    return toggleState;
+}
 }
