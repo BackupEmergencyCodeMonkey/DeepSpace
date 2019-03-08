@@ -341,6 +341,8 @@ public class Robot extends TimedRobot {
     // ***CLIMB***
     if (climbButton) { //climb
       elevatorTalon.set(0);
+      elbowTalon.set(0);
+      wristTalon.set(0);
     // if the talon stalls, as indicated by drawing too much current, put it in brake mode
       if (pdp.getCurrent(12) < 10) { //tune this value (10)
         climbTalon.set(climbSpeed); // tune this value
@@ -403,10 +405,11 @@ public class Robot extends TimedRobot {
     return (((double) n) % 4096) / 4096 * 360; //cast n to double, then get the number of NU's away from an even rotation, 
     //then get the number of rotations, then conv. to degrees
   }
-  public void setIntakeAngles(double angle) {
+  public void setIntakeAngles(double elevatorHeight, double goalHeight) {
     //Set elbow angle here
-   double wristAngle = 180-angle;
+   double var = Math.acos(( elevatorHeight - goalHeight )/41.91);
     //set wrist angle here
+    // elbow angle to the vertical 
   }
 
   
