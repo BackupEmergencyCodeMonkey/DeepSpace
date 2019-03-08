@@ -269,6 +269,8 @@ public class Robot extends TimedRobot {
     turn = rightStick.getRawAxis(0);
     chassisDrive.arcadeDrive(forward, turn);    
 
+
+
     openHatch = leftStick.getRawButtonPressed(4);
     closeHatch = leftStick.getRawButtonPressed(3);
     camSwapButton = leftStick.getRawButton(6);      
@@ -479,11 +481,9 @@ return accel;
   
 /**if the robot tips too far, limit its acceleration so that it can stabilise. Disable this if climbing */
   public void limitAccelerationWhenTipping() {
-    if ( !climbButtonHasBeenPressed) {}
-    if (Math.abs(gyro.getPitch()) > 20) {
+    if (Math.abs(gyro.getPitch()) > 20 && !climbButtonHasBeenPressed) {
       leftSide.set(leftSide.get());
       rightSide.set(rightSide.get());      
-    }
   }
     
   }
@@ -514,5 +514,6 @@ class TogglingButton {
     //milliseconds during the interval in which the  button is pressed
     lastButtonState = currentButtonState;
     return toggleState;
+}
 }
 }
