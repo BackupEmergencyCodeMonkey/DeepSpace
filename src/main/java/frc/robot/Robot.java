@@ -265,8 +265,9 @@ public class Robot extends TimedRobot {
      }
   @Override
   public void teleopPeriodic() { 
-    forward = leftStick.getRawAxis(1) ;//HELP MEE
+    forward = leftStick.getRawAxis(1) ;
     turn = rightStick.getRawAxis(0);
+    if (!((Math.abs(gyro.getPitch()) > 20) && !climbButtonHasBeenPressed))
     chassisDrive.arcadeDrive(forward, turn);    
 
 
@@ -463,7 +464,7 @@ public class Robot extends TimedRobot {
   private void incrementLoopCounter() {counter++;}
   
   double lastSpeed;
-  //
+  /*
 public double getAcceleration(WPI_TalonSRX talonToGetAccel) {
 
   double accel;
@@ -475,7 +476,7 @@ public double getAcceleration(WPI_TalonSRX talonToGetAccel) {
   lastSpeed = speed;
 return accel;  
 }
-
+*/
 
 
   
