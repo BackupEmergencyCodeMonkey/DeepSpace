@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.interfaces.Potentiometer;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
   
 
@@ -84,7 +85,10 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX elevatorTalon = new WPI_TalonSRX(9);
   WPI_TalonSRX elbowTalon = new WPI_TalonSRX(10);
   WPI_TalonSRX wristTalon = new WPI_TalonSRX(7);
-
+  //@@@ JW need intake victor assignments
+  //WPI_VictorSPX leftIntakeRoller = new WPI_VictorSPX(?);
+  //WPI_VictorSPX rightIntakeRoller = new WPI_VictorSPX(?);
+/* @@@ JW changing drive train motorcontroller numbers to reflect actual installation
   //*** DRIVETRAIN ***
   WPI_TalonSRX FrontLeft = new WPI_TalonSRX(1);
   WPI_VictorSPX MiddleLeft = new WPI_VictorSPX(2);
@@ -93,12 +97,22 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX   FrontRight = new WPI_TalonSRX(4);
   WPI_VictorSPX MiddleRight = new WPI_VictorSPX(5);
   WPI_VictorSPX BackRight = new WPI_VictorSPX(6);
+ */ 
+
+//*** DRIVETRAIN ***
+  WPI_TalonSRX FrontLeft = new WPI_TalonSRX(4);
+  WPI_VictorSPX MiddleLeft = new WPI_VictorSPX(5);
+  WPI_VictorSPX BackLeft = new WPI_VictorSPX(6);
+
+  WPI_TalonSRX   FrontRight = new WPI_TalonSRX(1);
+  WPI_VictorSPX MiddleRight = new WPI_VictorSPX(2);
+  WPI_VictorSPX BackRight = new WPI_VictorSPX(3);
   
   SpeedControllerGroup leftSide = new SpeedControllerGroup(FrontLeft, MiddleLeft, BackLeft);
   SpeedControllerGroup rightSide = new SpeedControllerGroup(FrontRight, MiddleRight, BackRight);
   DifferentialDrive chassisDrive = new DifferentialDrive(leftSide, rightSide);
 
- //*** VISION ***
+//*** VISION ***
   int bRate = 115200;
   int counting = 0;
   int xVal; //In order of appearance
@@ -130,6 +144,8 @@ public class Robot extends TimedRobot {
   public double ElevatorP = 0.0;
   public double ElevatorI = 0.0;
   public double ElevatorD = 0.0;
+  // @@@ JW adding an elevator feedforward parameter
+  public double ElevatorF = 0.0;
   
   public double ElbowP = 0.0;
   public double ElbowI = 0.0;
@@ -174,11 +190,15 @@ public class Robot extends TimedRobot {
         
   
   //*** CLIMB ***
-  DoubleSolenoid MOAC; // mother of all cylinders
-  AHRS gyro = new AHRS(SerialPort.Port.kMXP);
+// @@@ JW Asigning solonoid numbers to MOAC  
+//  DoubleSolenoid MOAC; // mother of all cylinders
+  DoubleSolenoid MOAC = new DoubleSolenoid (0,7); // mother of all cylinders
+  AHRS gyro = new AHRS(SerialPort.Port.kMXP);  
   WPI_TalonSRX climbTalon = new WPI_TalonSRX(12);
-  WPI_VictorSPX climbFollower = new WPI_VictorSPX(13);  
-  int climbSpeed = 1; // value to set the climb talons to
+  WPI_VictorSPX climbFollower = new WPI_VictorSPX(13);
+  //@@@ JW lets start with a slower climb speed for testing  
+  //int climbSpeed = 1; // value to set the climb talons to
+  double climbSpeed = .5; // value to set the climb talons to
   float climbAngle = 45;  
   PowerDistributionPanel pdp = new PowerDistributionPanel();
   
@@ -189,10 +209,13 @@ public class Robot extends TimedRobot {
   DoubleSolenioid solenoid2 = new DoubleSolenoid(1,6);
   DoubleSolenioid solenoid = new DoubleSolenoid(0,7);
   */
-  DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1); // NEED A LEFT AND RIGHT
+  //@@@ JW inserting actual solonoid numbers
+  //DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1); // NEED A LEFT AND RIGHT
+  DoubleSolenoid hatchHolder = new DoubleSolenoid (2,5); // NEED A LEFT AND RIGHT
   boolean hatchState = false;
 
-  DoubleSolenoid cargoHolder = new DoubleSolenoid (2,3);
+//  DoubleSolenoid cargoHolder = new DoubleSolenoid (2,3);
+  DoubleSolenoid cargoHolder = new DoubleSolenoid (1,6);
   boolean cargoState = false;
 
   boolean lastCameraSwitchState = false;
@@ -202,14 +225,22 @@ public class Robot extends TimedRobot {
 
   int counter; // count the number of iterations in a periodic mode
   boolean climbButtonHasBeenPressed;
+  //@@@ JW moved pot assignmet up a few lines.
+  Potentiometer pot = new AnalogPotentiometer(0, 1, 0);
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
    */
-  Potentiometer pot = new AnalogPotentiometer(0, 1, 0);
   @Override
   public void robotInit() {
     zeroLoopCounter();
+  // @@@ JW Don't we need some configSelectedFeedbackSensor magic in here to use the encoders?
+  FrontLeft.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative,0,0);
+  FrontRight.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative,0,0);
+  elevatorTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative,0,0);
+  elbowTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative,0,0);
+  wristTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative,0,0);
+
     try {
       compress = new Compressor(0);
       compress.setClosedLoopControl(true);
@@ -254,23 +285,27 @@ public class Robot extends TimedRobot {
       hatchHolder.set(DoubleSolenoid.Value.kReverse);
       cargoHolder.set(DoubleSolenoid.Value.kReverse);      
     } 
-  @Override
+
+    @Override
   public void autonomousInit() {
     zeroLoopCounter();
   }
   @Override
   public void autonomousPeriodic() {
+    // @@@ JW do we need drive code here?
     incrementLoopCounter();
   }
   @Override
   public void teleopInit() {
      climbTalon.setNeutralMode(NeutralMode.Brake);
+     //@@@ JW set other motorcontrollers to brake mode?
      zeroLoopCounter();
      }
   @Override
   public void teleopPeriodic() { 
     forward = leftStick.getRawAxis(1) ;
     turn = rightStick.getRawAxis(0);
+    //@@@ JW test this, It might lead to jerky behavior.  And do we want pitch or roll here
     if (!((Math.abs(gyro.getRoll()) > 20) && !climbButtonHasBeenPressed))
     chassisDrive.arcadeDrive(forward, turn);    
     openHatch = leftStick.getRawButtonPressed(4);
@@ -348,9 +383,11 @@ public class Robot extends TimedRobot {
 
     if (cargoShipLev) { //cargo cargo ship
       elevatorTalon.set(ControlMode.MotionMagic, convertElevatorHeightToNativeUnits(43));
-    }        
-    if (outtakeButton) { //outtake
-    }
+    } 
+    // @@@ JW commented out redundant code       
+    //if (outtakeButton) { //outtake
+    //}
+    //@@@ JW need to actually set intake roller speeds
     if (outtakeButton) { //rotate intake out
     }
     if (intakeButton) { //rotate intake in
@@ -362,7 +399,8 @@ public class Robot extends TimedRobot {
       elbowTalon.set(0);
       wristTalon.set(0);
     // if the talon stalls, as indicated by drawing too much current, put it in brake mode
-      if (pdp.getCurrent(12) < 10) { //tune this value (10)
+    // @@@ JW I bumped the current cuttof to 40 amps
+      if (pdp.getCurrent(12) < 40) { //tune this value (10)
         climbTalon.set(climbSpeed); // tune this value
       }
       else {climbTalon.set(0);}
