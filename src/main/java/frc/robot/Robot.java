@@ -144,7 +144,7 @@ public class Robot extends TimedRobot {
   public double ElevatorP = 0.0;
   public double ElevatorI = 0.0;
   public double ElevatorD = 0.0;
-  // @@@ JW adding an elevator feedforward parameter
+  // JW adding an elevator feedforward parameter
   public double ElevatorF = 0.0;
   
   public double ElbowP = 0.0;
