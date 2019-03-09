@@ -184,7 +184,11 @@ public class Robot extends TimedRobot {
   
   //*** PNEUMATICS ***  
   Compressor compress;  
-
+  /*
+  DoubleSolenioid solenoid1 = new DoubleSolenoid(2,5);
+  DoubleSolenioid solenoid2 = new DoubleSolenoid(1,6);
+  DoubleSolenioid solenoid = new DoubleSolenoid(0,7);
+  */
   DoubleSolenoid hatchHolder = new DoubleSolenoid (0,1); // NEED A LEFT AND RIGHT
   boolean hatchState = false;
 
@@ -267,11 +271,8 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() { 
     forward = leftStick.getRawAxis(1) ;
     turn = rightStick.getRawAxis(0);
-    if (!((Math.abs(gyro.getPitch()) > 20) && !climbButtonHasBeenPressed))
+    if (!((Math.abs(gyro.getRoll()) > 20) && !climbButtonHasBeenPressed))
     chassisDrive.arcadeDrive(forward, turn);    
-
-
-
     openHatch = leftStick.getRawButtonPressed(4);
     closeHatch = leftStick.getRawButtonPressed(3);
     camSwapButton = leftStick.getRawButton(6);      
@@ -281,7 +282,7 @@ public class Robot extends TimedRobot {
     intakeButton = rightStick.getRawButton(1); //Intake cargo
     outtakeButton = rightStick.getRawButton(3); //fire cargo
     climbButton = rightStick.getRawButton(7);                                     //should this be "climbButton" or "endgameButton"
-                            
+
     cargoLev1 = copilotStick.getRawButton(11);
     cargoLev2 = copilotStick.getRawButton(9);
     cargoLev3 = copilotStick.getRawButton(7);
@@ -366,7 +367,7 @@ public class Robot extends TimedRobot {
       }
       else {climbTalon.set(0);}
       // if the robot is at or greater than a predetermined angle, fire the MOAC.
-      if (gyro.getPitch() > climbAngle) // climbAngle is 45 degreesright now, tune
+      if (gyro.getRoll() > climbAngle) // climbAngle is 45 degreesright now, tune
       {MOAC.set(DoubleSolenoid.Value.kForward);}
     }
     if (retractClimbCylinderButton) { //retract MOAC
